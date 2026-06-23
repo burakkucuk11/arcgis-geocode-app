@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23137f7b'/%3E%3Cpath d='M16 5.5c-4.1 0-7.4 3.3-7.4 7.4 0 5.6 7.4 13.6 7.4 13.6s7.4-8 7.4-13.6c0-4.1-3.3-7.4-7.4-7.4Zm0 10.4a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z' fill='white'/%3E%3C/svg%3E"
+    />
+    <title>ArcGIS Geocoding Uygulaması</title>
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">ArcGIS Maps SDK</p>
+          <h1>Geocoding Uygulaması</h1>
+        </div>
+        <div class="topbar__status" id="summaryStatus">Dosya bekleniyor</div>
+      </header>
+
+      <main class="workspace">
+        <aside class="control-panel" aria-label="Geocoding kontrolleri">
+          <section class="panel-section">
+            <div class="section-title">
+              <i data-lucide="file-up" aria-hidden="true"></i>
+              <h2>Dosya</h2>
+            </div>
+            <label class="file-drop" for="fileInput">
+              <input id="fileInput" type="file" accept=".csv,.xlsx" />
+              <span id="fileName">CSV veya Excel seç</span>
+            </label>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <i data-lucide="key-round" aria-hidden="true"></i>
+              <h2>Servis</h2>
+            </div>
+            <label class="field">
+              <span>Esri API Key</span>
+              <input id="apiKeyInput" type="password" autocomplete="off" placeholder="API key gir" />
+            </label>
+            <label class="field">
+              <span>Ülke kodu</span>
+              <input id="countryCodeInput" type="text" value="TUR" maxlength="3" />
+            </label>
+            <label class="field">
+              <span>İstek aralığı (ms)</span>
+              <input id="delayInput" type="number" value="180" min="0" max="3000" step="50" />
+            </label>
+            <label class="checkbox-field">
+              <input id="storeResultsInput" type="checkbox" />
+              <span>Sonuçları saklama izni</span>
+            </label>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <i data-lucide="map-pin" aria-hidden="true"></i>
+              <h2>Adres Kolonları</h2>
+            </div>
+            <div id="columnSelector" class="column-selector empty-state">
+              Dosya yüklendiğinde kolonlar burada görünecek.
+            </div>
+            <div class="address-preview">
+              <span>Adres önizleme</span>
+              <strong id="addressPreview">-</strong>
+            </div>
+          </section>
+
+          <section class="panel-section">
+            <button id="geocodeButton" class="primary-button" type="button" disabled>
+              <i data-lucide="play" aria-hidden="true"></i>
+              Geocode Başlat
+            </button>
+            <div class="progress-wrap" aria-live="polite">
+              <div class="progress-meta">
+                <span id="progressLabel">0 / 0 adres işlendi</span>
+                <span id="progressPercent">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="progressBar" class="progress-bar"></div>
+              </div>
+            </div>
+            <div id="messageBox" class="message-box" role="status"></div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <i data-lucide="download" aria-hidden="true"></i>
+              <h2>Dışa Aktar</h2>
+            </div>
+            <div class="export-grid">
+              <button id="exportCsvButton" type="button" disabled>
+                <i data-lucide="file-text" aria-hidden="true"></i>
+                CSV
+              </button>
+              <button id="exportKmlButton" type="button" disabled>
+                <i data-lucide="globe-2" aria-hidden="true"></i>
+                KML
+              </button>
+              <button id="exportShpButton" type="button" disabled>
+                <i data-lucide="archive" aria-hidden="true"></i>
+                SHP
+              </button>
+            </div>
+          </section>
+        </aside>
+
+        <section class="main-panel">
+          <div class="map-shell">
+            <div id="mapView" class="map-view" aria-label="Geocode sonuç haritası"></div>
+            <div class="metric-strip" aria-live="polite">
+              <div>
+                <span>Toplam</span>
+                <strong id="totalCount">0</strong>
+              </div>
+              <div>
+                <span>Başarılı</span>
+                <strong id="successCount">0</strong>
+              </div>
+              <div>
+                <span>Başarısız</span>
+                <strong id="failedCount">0</strong>
+              </div>
+              <div>
+                <span>Düşük skor</span>
+                <strong id="lowScoreCount">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-shell">
+            <div class="table-toolbar">
+              <div class="toolbar-group search-field">
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input id="tableSearchInput" type="search" placeholder="Tabloda ara" />
+              </div>
+              <div class="toolbar-group">
+                <label for="filterSelect">Filtre</label>
+                <select id="filterSelect">
+                  <option value="all">Tüm kayıtlar</option>
+                  <option value="success">Başarılı</option>
+                  <option value="failed">Başarısız</option>
+                  <option value="low-score">Düşük skor</option>
+                </select>
+              </div>
+              <div class="toolbar-group">
+                <label for="scoreThresholdInput">Skor eşiği</label>
+                <input id="scoreThresholdInput" type="number" value="85" min="0" max="100" step="1" />
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table id="resultsTable">
+                <colgroup id="tableCols"></colgroup>
+                <thead id="tableHead">
+                  <tr>
+                    <th>Kayıt yok</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr>
+                    <td>Henüz dosya yüklenmedi.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

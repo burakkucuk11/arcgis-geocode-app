@@ -1,0 +1,21 @@
+{
+  "name": "arcgis-geocode-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@arcgis/core": "latest",
+    "@mapbox/shp-write": "latest",
+    "lucide": "latest",
+    "papaparse": "latest",
+    "read-excel-file": "latest"
+  },
+  "devDependencies": {
+    "vite": "latest"
+  }
+}
