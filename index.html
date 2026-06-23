@@ -111,6 +111,15 @@
         <section class="main-panel">
           <div class="map-shell">
             <div id="mapView" class="map-view" aria-label="Geocode sonuç haritası"></div>
+            <div class="map-tools" aria-label="Harita seçim araçları">
+              <button id="boxSelectButton" type="button">
+                <i data-lucide="map-pin" aria-hidden="true"></i>
+                Dikdörtgen Seç
+              </button>
+              <button id="clearSelectionButton" type="button" disabled>Temizle</button>
+              <span id="selectionStatus">Tüm kayıtlar</span>
+            </div>
+            <div id="selectionBox" class="selection-box" hidden></div>
             <div class="metric-strip" aria-live="polite">
               <div>
                 <span>Toplam</span>
@@ -151,20 +160,44 @@
                 <input id="scoreThresholdInput" type="number" value="85" min="0" max="100" step="1" />
               </div>
             </div>
-            <div class="table-scroll">
-              <table id="resultsTable">
-                <colgroup id="tableCols"></colgroup>
-                <thead id="tableHead">
-                  <tr>
-                    <th>Kayıt yok</th>
-                  </tr>
-                </thead>
-                <tbody id="tableBody">
-                  <tr>
-                    <td>Henüz dosya yüklenmedi.</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="tables-area">
+              <section class="table-block table-block--summary" aria-label="Geocode özet tablosu">
+                <div class="table-title">Geocode Özeti</div>
+                <div class="table-scroll">
+                  <table id="summaryTable">
+                    <colgroup id="summaryCols"></colgroup>
+                    <thead id="summaryHead">
+                      <tr>
+                        <th>Kayıt yok</th>
+                      </tr>
+                    </thead>
+                    <tbody id="summaryBody">
+                      <tr>
+                        <td>Henüz dosya yüklenmedi.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="table-block table-block--full" aria-label="Tüm attribute tablosu">
+                <div class="table-title">Tüm Veri</div>
+                <div class="table-scroll">
+                  <table id="resultsTable">
+                    <colgroup id="tableCols"></colgroup>
+                    <thead id="tableHead">
+                      <tr>
+                        <th>Kayıt yok</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                      <tr>
+                        <td>Henüz dosya yüklenmedi.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </div>
           </div>
         </section>

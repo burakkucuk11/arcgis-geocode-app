@@ -96,7 +96,9 @@ button:focus-visible,
 .app-shell {
   display: flex;
   flex-direction: column;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 .topbar {
@@ -142,6 +144,7 @@ button:focus-visible,
   gap: 16px;
   min-height: 0;
   flex: 1;
+  overflow: hidden;
   padding: 16px;
 }
 
@@ -388,10 +391,11 @@ button:focus-visible,
 
 .main-panel {
   display: grid;
-  grid-template-rows: minmax(420px, 58vh) minmax(260px, 1fr);
+  grid-template-rows: minmax(360px, 52vh) minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .map-shell {
@@ -436,6 +440,51 @@ button:focus-visible,
   line-height: 1.1;
 }
 
+.map-tools {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  border: 1px solid rgba(217, 225, 221, 0.9);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(29, 37, 36, 0.12);
+}
+
+.map-tools button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.map-tools button.active {
+  border-color: var(--primary-dark);
+  color: #fff;
+  background: var(--primary);
+}
+
+.map-tools span {
+  min-width: 92px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.selection-box {
+  position: absolute;
+  z-index: 3;
+  border: 2px solid var(--primary);
+  background: rgba(19, 127, 123, 0.14);
+  pointer-events: none;
+}
+
 .table-shell {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -449,6 +498,34 @@ button:focus-visible,
   gap: 10px;
   padding: 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.tables-area {
+  display: grid;
+  grid-template-rows: minmax(122px, 0.44fr) minmax(0, 0.56fr);
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.table-block {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.table-title {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  color: var(--primary-dark);
+  background: #f8fbfa;
+  font-size: 12px;
+  font-weight: 780;
 }
 
 .toolbar-group {
@@ -603,7 +680,7 @@ button:focus-visible,
   }
 
   .main-panel {
-    grid-template-rows: 460px minmax(320px, 1fr);
+    grid-template-rows: 420px minmax(420px, 1fr);
   }
 
   .metric-strip {
@@ -615,5 +692,14 @@ button:focus-visible,
 
   .table-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .tables-area {
+    grid-template-rows: minmax(150px, 0.42fr) minmax(0, 0.58fr);
+  }
+
+  .map-tools {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

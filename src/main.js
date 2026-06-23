@@ -26,6 +26,7 @@ import readXlsxFile from "read-excel-file/browser";
 const ESRI_API_KEY = "BURAYA_API_KEY_GELECEK";
 const GEOCODING_SERVICE_URL = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
 const GEOCODE_FIELDS = ["Geocode address", "Latitude", "Longitude", "Match address", "Score", "Geocode status"];
+const SUMMARY_FIELDS = ["Geocode kolonu", "Kolon değeri", "Geocode address", "Match address", "Score", "Latitude", "Longitude", "Status"];
 const PLACEHOLDER_KEY = "BURAYA_API_KEY_GELECEK";
 
 const shpwrite = shpwriteModule.default ?? shpwriteModule;
@@ -49,9 +50,17 @@ const elements = {
   failedCount: document.querySelector("#failedCount"),
   lowScoreCount: document.querySelector("#lowScoreCount"),
   summaryStatus: document.querySelector("#summaryStatus"),
+  boxSelectButton: document.querySelector("#boxSelectButton"),
+  clearSelectionButton: document.querySelector("#clearSelectionButton"),
+  selectionStatus: document.querySelector("#selectionStatus"),
+  selectionBox: document.querySelector("#selectionBox"),
   tableSearchInput: document.querySelector("#tableSearchInput"),
   filterSelect: document.querySelector("#filterSelect"),
   scoreThresholdInput: document.querySelector("#scoreThresholdInput"),
+  summaryTable: document.querySelector("#summaryTable"),
+  summaryCols: document.querySelector("#summaryCols"),
+  summaryHead: document.querySelector("#summaryHead"),
+  summaryBody: document.querySelector("#summaryBody"),
   resultsTable: document.querySelector("#resultsTable"),
   tableCols: document.querySelector("#tableCols"),
   tableHead: document.querySelector("#tableHead"),
@@ -66,6 +75,9 @@ let sourceRows = [];
 let resultRows = [];
 let selectedColumns = [];
 let selectedRowId = null;
+let spatialFilterRowIds = null;
+let isBoxSelectMode = false;
+let boxSelectStart = null;
 let isGeocoding = false;
 
 const graphicsLayer = new GraphicsLayer({ title: "Geocode Sonuçları" });
@@ -112,11 +124,13 @@ if (ESRI_API_KEY && ESRI_API_KEY !== PLACEHOLDER_KEY) {
 elements.fileInput.addEventListener("change", handleFileSelection);
 elements.columnSelector.addEventListener("change", handleColumnSelection);
 elements.geocodeButton.addEventListener("click", geocodeRows);
-elements.tableSearchInput.addEventListener("input", renderTable);
-elements.filterSelect.addEventListener("change", renderTable);
+elements.boxSelectButton.addEventListener("click", toggleBoxSelectMode);
+elements.clearSelectionButton.addEventListener("click", clearSpatialSelection);
+elements.tableSearchInput.addEventListener("input", renderTables);
+elements.filterSelect.addEventListener("change", renderTables);
 elements.scoreThresholdInput.addEventListener("input", () => {
   renderStats();
-  renderTable();
+  renderTables();
   refreshGraphicSymbols();
 });
 elements.exportCsvButton.addEventListener("click", exportCsv);
@@ -130,6 +144,15 @@ view.on("click", async (event) => {
   if (graphicHit?.graphic?.attributes?.__rowId) {
     selectRow(graphicHit.graphic.attributes.__rowId, { fromMap: true });
   }
+});
+
+view.on("drag", (event) => {
+  if (!isBoxSelectMode) {
+    return;
+  }
+
+  event.stopPropagation();
+  handleBoxSelectDrag(event);
 });
 
 async function handleFileSelection(event) {
@@ -152,11 +175,12 @@ async function handleFileSelection(event) {
     sourceRows = parsedRows.map(normalizeRow);
     headers = Object.keys(sourceRows[0]);
     selectedColumns = [];
+    clearSpatialSelection({ silent: true });
 
     renderColumnSelector();
     resultRows = sourceRows.map(createPendingResult);
     renderStats();
-    renderTable();
+    renderTables();
     updateAddressPreview();
     updateActionStates();
     setMessage(`${sourceRows.length} kayıt yüklendi.`, "success");
@@ -305,10 +329,11 @@ function handleColumnSelection() {
   selectedColumns = selectedColumn ? [selectedColumn] : [];
   resultRows = sourceRows.map(createPendingResult);
   graphicsLayer.removeAll();
+  clearSpatialSelection({ silent: true });
   selectedRowId = null;
   updateAddressPreview();
   renderStats();
-  renderTable();
+  renderTables();
   updateActionStates();
 }
 
@@ -364,6 +389,7 @@ async function geocodeRows() {
   isGeocoding = true;
   esriConfig.apiKey = apiKey;
   graphicsLayer.removeAll();
+  clearSpatialSelection({ silent: true });
   selectedRowId = null;
   resultRows = sourceRows.map(createPendingResult);
   updateActionStates();
@@ -407,7 +433,7 @@ async function geocodeRows() {
 
     if (index % 5 === 0 || index === resultRows.length - 1) {
       renderStats();
-      renderTable();
+      renderTables();
     }
 
     if (delay && index < resultRows.length - 1) {
@@ -418,7 +444,7 @@ async function geocodeRows() {
   isGeocoding = false;
   await zoomToResults();
   renderStats();
-  renderTable();
+  renderTables();
   updateActionStates();
   setMessage(abortMessage || "Geocoding tamamlandı.", abortMessage ? "error" : "success");
 }
@@ -566,7 +592,7 @@ function getSymbol(row) {
 function selectRow(rowId, options = {}) {
   selectedRowId = rowId;
   refreshGraphicSymbols();
-  renderTable();
+  renderTables();
 
   const row = resultRows.find((item) => item.id === rowId);
   if (!row) {
@@ -605,6 +631,119 @@ function openPopup(graphic) {
     features: [graphic],
     location: graphic.geometry
   });
+}
+
+function toggleBoxSelectMode() {
+  if (!graphicsLayer.graphics.length) {
+    setMessage("Dikdörtgen seçim için önce başarılı geocode sonucu olmalı.", "error");
+    return;
+  }
+
+  setBoxSelectMode(!isBoxSelectMode);
+}
+
+function setBoxSelectMode(isActive) {
+  isBoxSelectMode = isActive;
+  boxSelectStart = null;
+  hideSelectionBox();
+  elements.boxSelectButton.classList.toggle("active", isActive);
+  updateSelectionStatus();
+}
+
+function clearSpatialSelection(options = {}) {
+  spatialFilterRowIds = null;
+  setBoxSelectMode(false);
+
+  if (!options.silent) {
+    renderTables();
+    setMessage("Harita seçimi temizlendi. Tüm kayıtlar gösteriliyor.", "info");
+  }
+}
+
+function handleBoxSelectDrag(event) {
+  const point = { x: event.x, y: event.y };
+
+  if (event.action === "start") {
+    boxSelectStart = point;
+    updateSelectionBox(boxSelectStart, point);
+    return;
+  }
+
+  if (!boxSelectStart) {
+    return;
+  }
+
+  updateSelectionBox(boxSelectStart, point);
+
+  if (event.action === "end") {
+    const bounds = getScreenBounds(boxSelectStart, point);
+    setBoxSelectMode(false);
+    applyRectangleSelection(bounds);
+  }
+}
+
+function applyRectangleSelection(bounds) {
+  const selectedIds = graphicsLayer.graphics
+    .toArray()
+    .filter((graphic) => {
+      const screenPoint = view.toScreen(graphic.geometry);
+      return (
+        screenPoint &&
+        screenPoint.x >= bounds.left &&
+        screenPoint.x <= bounds.right &&
+        screenPoint.y >= bounds.top &&
+        screenPoint.y <= bounds.bottom
+      );
+    })
+    .map((graphic) => graphic.attributes.__rowId)
+    .filter(Boolean);
+
+  spatialFilterRowIds = new Set(selectedIds);
+
+  if (selectedRowId && !spatialFilterRowIds.has(selectedRowId)) {
+    selectedRowId = null;
+    refreshGraphicSymbols();
+  }
+
+  renderTables();
+  updateSelectionStatus();
+  setMessage(`${selectedIds.length} kayıt seçildi. Tablolar harita seçimine göre filtrelendi.`, selectedIds.length ? "success" : "info");
+}
+
+function updateSelectionBox(start, current) {
+  const bounds = getScreenBounds(start, current);
+  Object.assign(elements.selectionBox.style, {
+    left: `${bounds.left}px`,
+    top: `${bounds.top}px`,
+    width: `${bounds.right - bounds.left}px`,
+    height: `${bounds.bottom - bounds.top}px`
+  });
+  elements.selectionBox.hidden = false;
+}
+
+function hideSelectionBox() {
+  elements.selectionBox.hidden = true;
+}
+
+function getScreenBounds(start, current) {
+  return {
+    left: Math.min(start.x, current.x),
+    top: Math.min(start.y, current.y),
+    right: Math.max(start.x, current.x),
+    bottom: Math.max(start.y, current.y)
+  };
+}
+
+function updateSelectionStatus() {
+  const selectedCount = spatialFilterRowIds?.size ?? 0;
+  elements.clearSelectionButton.disabled = !spatialFilterRowIds;
+
+  if (isBoxSelectMode) {
+    elements.selectionStatus.textContent = "Haritada sürükle";
+    return;
+  }
+
+  elements.selectionStatus.textContent = spatialFilterRowIds ? `${selectedCount} kayıt seçildi` : "Tüm kayıtlar";
 }
 
 function refreshGraphicSymbols() {
@@ -658,6 +797,68 @@ function renderStats() {
   } else {
     elements.summaryStatus.textContent = `${sourceRows.length} kayıt hazır`;
   }
+}
+
+function renderTables() {
+  renderSummaryTable();
+  renderTable();
+}
+
+function renderSummaryTable() {
+  const rows = getFilteredRows();
+  const columnWidths = [170, 240, 260, 280, 90, 120, 120, 130];
+  const tableWidth = columnWidths.reduce((total, width) => total + width, 0);
+
+  elements.summaryTable.style.setProperty("--results-table-width", `${tableWidth}px`);
+  elements.summaryCols.innerHTML = columnWidths.map((width) => `<col style="width: ${width}px" />`).join("");
+  elements.summaryHead.innerHTML = `
+    <tr>
+      ${SUMMARY_FIELDS.map((header) => `<th title="${escapeAttribute(header)}">${escapeHtml(header)}</th>`).join("")}
+    </tr>
+  `;
+
+  if (!rows.length) {
+    elements.summaryBody.innerHTML = `
+      <tr>
+        <td class="empty-table-cell" colspan="${SUMMARY_FIELDS.length}">Gösterilecek kayıt yok.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  elements.summaryBody.innerHTML = rows
+    .map((row) => {
+      const selectedColumn = selectedColumns[0] || "";
+      const cells = [
+        selectedColumn,
+        selectedColumn ? row.source[selectedColumn] : "",
+        row.address,
+        row.matchAddress,
+        row.score,
+        row.latitude,
+        row.longitude,
+        row.status
+      ];
+      const statusClass = row.status === "Başarılı" ? "status-success" : row.status === "Başarısız" ? "status-failed" : "status-pending";
+      const selectedClass = selectedRowId === row.id ? "selected" : "";
+
+      return `
+        <tr data-row-id="${escapeAttribute(row.id)}" class="${selectedClass}">
+          ${cells
+            .map((cell, index) => {
+              const value = formatCell(cell);
+              const className = index === cells.length - 1 ? ` class="${statusClass}"` : "";
+              return `<td${className} title="${escapeAttribute(value)}">${escapeHtml(value)}</td>`;
+            })
+            .join("")}
+        </tr>
+      `;
+    })
+    .join("");
+
+  elements.summaryBody.querySelectorAll("tr[data-row-id]").forEach((rowElement) => {
+    rowElement.addEventListener("click", () => selectRow(rowElement.dataset.rowId));
+  });
 }
 
 function renderTable() {
@@ -749,6 +950,10 @@ function getFilteredRows() {
   const filter = elements.filterSelect.value;
 
   return resultRows.filter((row) => {
+    if (spatialFilterRowIds && !spatialFilterRowIds.has(row.id)) {
+      return false;
+    }
+
     if (filter === "success" && row.status !== "Başarılı") {
       return false;
     }
@@ -849,7 +1054,7 @@ function exportKml() {
   setMessage("KML oluşturuldu.", "success");
 }
 
-function exportShp() {
+async function exportShp() {
   const successfulRows = getSuccessfulRows();
 
   if (!successfulRows.length) {
@@ -870,12 +1075,15 @@ function exportShp() {
       }))
     };
 
-    shpwrite.download(featureCollection, {
+    const zipBlob = await shpwrite.zip(featureCollection, {
       folder: "geocode-sonuclari",
+      outputType: "blob",
+      compression: "DEFLATE",
       types: {
         point: "points"
       }
     });
+    downloadBlob(zipBlob, "geocode-sonuclari.zip");
     setMessage("SHP dosyası oluşturuldu.", "success");
   } catch (error) {
     setMessage(error.message || "SHP export sırasında hata oluştu.", "error");
@@ -936,11 +1144,12 @@ function resetStateForNewFile() {
   resultRows = [];
   selectedColumns = [];
   selectedRowId = null;
+  clearSpatialSelection({ silent: true });
   graphicsLayer.removeAll();
   updateProgress(0, 0);
   renderColumnSelector();
   renderStats();
-  renderTable();
+  renderTables();
   updateActionStates();
   elements.addressPreview.textContent = "-";
 }
@@ -964,7 +1173,7 @@ function downloadBlob(blob, filename) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function csvEscape(value) {
@@ -1017,5 +1226,6 @@ function sleep(ms) {
 }
 
 renderStats();
-renderTable();
+renderTables();
 updateActionStates();
+updateSelectionStatus();
