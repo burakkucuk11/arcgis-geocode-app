@@ -391,7 +391,7 @@ button:focus-visible,
 
 .main-panel {
   display: grid;
-  grid-template-rows: minmax(360px, 52vh) minmax(0, 1fr);
+  grid-template-rows: minmax(300px, 38vh) minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
   min-height: 0;
@@ -400,7 +400,7 @@ button:focus-visible,
 
 .map-shell {
   position: relative;
-  min-height: 360px;
+  min-height: 300px;
   overflow: hidden;
 }
 
@@ -494,7 +494,8 @@ button:focus-visible,
 
 .table-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 170px 140px;
+  grid-template-columns: minmax(260px, 420px) 170px 140px;
+  align-items: end;
   gap: 10px;
   padding: 12px;
   border-bottom: 1px solid var(--line);
@@ -502,7 +503,7 @@ button:focus-visible,
 
 .tables-area {
   display: grid;
-  grid-template-rows: minmax(122px, 0.44fr) minmax(0, 0.56fr);
+  grid-template-rows: minmax(150px, 0.34fr) minmax(0, 0.66fr);
   gap: 10px;
   min-height: 0;
   overflow: hidden;
@@ -680,7 +681,7 @@ button:focus-visible,
   }
 
   .main-panel {
-    grid-template-rows: 420px minmax(420px, 1fr);
+    grid-template-rows: 340px minmax(520px, 1fr);
   }
 
   .metric-strip {
@@ -695,7 +696,7 @@ button:focus-visible,
   }
 
   .tables-area {
-    grid-template-rows: minmax(150px, 0.42fr) minmax(0, 0.58fr);
+    grid-template-rows: minmax(150px, 0.34fr) minmax(0, 0.66fr);
   }
 
   .map-tools {
