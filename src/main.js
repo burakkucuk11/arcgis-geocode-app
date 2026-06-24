@@ -61,6 +61,8 @@ const elements = {
   summaryCols: document.querySelector("#summaryCols"),
   summaryHead: document.querySelector("#summaryHead"),
   summaryBody: document.querySelector("#summaryBody"),
+  exportActiveTableButton: document.querySelector("#exportActiveTableButton"),
+  tableExportLabel: document.querySelector("#tableExportLabel"),
   resultsTable: document.querySelector("#resultsTable"),
   tableCols: document.querySelector("#tableCols"),
   tableHead: document.querySelector("#tableHead"),
@@ -139,6 +141,7 @@ elements.scoreThresholdInput.addEventListener("input", () => {
 elements.exportCsvButton.addEventListener("click", exportCsv);
 elements.exportKmlButton.addEventListener("click", exportKml);
 elements.exportShpButton.addEventListener("click", exportShp);
+elements.exportActiveTableButton.addEventListener("click", exportActiveTableCsv);
 elements.tableTabs.forEach((tab) => {
   tab.addEventListener("click", () => setActiveTableView(tab.dataset.tableTab));
 });
@@ -808,6 +811,7 @@ function renderStats() {
 function renderTables() {
   renderSummaryTable();
   renderTable();
+  updateTableExportState();
 }
 
 function setActiveTableView(viewName) {
@@ -828,6 +832,14 @@ function setActiveTableView(viewName) {
     panel.classList.toggle("active", isActive);
     panel.hidden = !isActive;
   });
+
+  updateTableExportState();
+}
+
+function updateTableExportState() {
+  const label = activeTableView === "full" ? "Tüm Veri CSV" : "Özet CSV";
+  elements.tableExportLabel.textContent = label;
+  elements.exportActiveTableButton.disabled = isGeocoding || !getFilteredRows().length;
 }
 
 function renderSummaryTable() {
@@ -1023,6 +1035,7 @@ function updateActionStates() {
   elements.exportCsvButton.disabled = !hasResults || isGeocoding;
   elements.exportKmlButton.disabled = !hasSuccessfulResults || isGeocoding;
   elements.exportShpButton.disabled = !hasSuccessfulResults || isGeocoding;
+  updateTableExportState();
 }
 
 function exportCsv() {
@@ -1040,6 +1053,64 @@ function exportCsv() {
 
   downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }), "geocode-sonuclari.csv");
   setMessage("CSV oluşturuldu.", "success");
+}
+
+function exportActiveTableCsv() {
+  const rows = getFilteredRows();
+
+  if (!rows.length) {
+    setMessage("Tabloda dışa aktarılacak kayıt yok.", "error");
+    return;
+  }
+
+  const tableData = activeTableView === "full" ? buildFullTableCsv(rows) : buildSummaryTableCsv(rows);
+  const csv = buildCsv(tableData.headers, tableData.records);
+
+  downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }), tableData.filename);
+  setMessage(`${tableData.label} CSV oluşturuldu.`, "success");
+}
+
+function buildSummaryTableCsv(rows) {
+  const selectedColumn = selectedColumns[0] || "";
+
+  return {
+    label: "Geocode özeti",
+    filename: "geocode-ozeti-tablosu.csv",
+    headers: SUMMARY_FIELDS,
+    records: rows.map((row) => [
+      selectedColumn,
+      selectedColumn ? row.source[selectedColumn] : "",
+      row.address,
+      row.matchAddress,
+      row.score,
+      row.latitude,
+      row.longitude,
+      row.status
+    ])
+  };
+}
+
+function buildFullTableCsv(rows) {
+  const tableHeaders = [...headers, ...GEOCODE_FIELDS];
+
+  return {
+    label: "Tüm veri tablosu",
+    filename: "tum-veri-tablosu.csv",
+    headers: tableHeaders,
+    records: rows.map((row) => [
+      ...headers.map((header) => row.source[header]),
+      row.address,
+      row.latitude,
+      row.longitude,
+      row.matchAddress,
+      row.score,
+      row.status
+    ])
+  };
+}
+
+function buildCsv(csvHeaders, records) {
+  return [csvHeaders.map(csvEscape).join(","), ...records.map((row) => row.map(csvEscape).join(","))].join("\n");
 }
 
 function exportKml() {

@@ -11,7 +11,9 @@ This project is a Vite-based web application for geocoding address data from CSV
 - Successful geocode results are added to the map as points while processing continues.
 - The map no longer zooms after every point; it zooms once after the full geocoding run is complete.
 - An attribute table showing original source fields plus geocoding result fields.
+- Tabbed summary and full-data tables, with CSV export for the active filtered table.
 - Fixed-height table rows with ellipsis for long values and full values available on hover.
+- A larger table area that allows page scrolling to the table, while long record lists scroll inside the table itself.
 - Search, status filtering, and low-score filtering.
 - CSV, KML, and SHP export for geocoded results.
 - Map and table selection sync: selecting a row zooms to its point, and selecting a point highlights the related row.
@@ -76,4 +78,4 @@ To avoid that, the app only sends `forStorage: true` when the "Store results per
 4. Start geocoding.
 5. Successful results appear on the map as they arrive.
 6. When geocoding finishes, the map zooms to all successful points.
-7. Review results in the table and export them as CSV, KML, or SHP.
+7. Review results in the tabbed tables, export the active table as CSV, or export geocoded results as CSV, KML, or SHP.

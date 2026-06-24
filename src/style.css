@@ -96,9 +96,7 @@ button:focus-visible,
 .app-shell {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   min-height: 100vh;
-  overflow: hidden;
 }
 
 .topbar {
@@ -141,10 +139,9 @@ button:focus-visible,
 .workspace {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  align-items: start;
   gap: 16px;
-  min-height: 0;
   flex: 1;
-  overflow: hidden;
   padding: 16px;
 }
 
@@ -391,13 +388,9 @@ button:focus-visible,
 
 .main-panel {
   display: grid;
-  grid-template-rows: minmax(300px, 38vh) minmax(0, 1fr);
+  grid-template-rows: minmax(300px, 38vh) auto;
   gap: 16px;
-  height: 100%;
-  max-height: 100%;
   min-width: 0;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .map-shell {
@@ -490,19 +483,27 @@ button:focus-visible,
 .table-shell {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
+  height: clamp(560px, 72vh, 820px);
+  max-height: 820px;
+  min-height: 560px;
   overflow: hidden;
 }
 
 .table-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 420px) 170px 140px;
+  grid-template-columns: minmax(260px, 1fr) 170px 140px auto;
   align-items: end;
   gap: 10px;
   padding: 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.table-export-button {
+  min-width: 132px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 760;
+  white-space: nowrap;
 }
 
 .table-tabs {
@@ -730,7 +731,7 @@ button:focus-visible,
   }
 
   .main-panel {
-    grid-template-rows: 340px minmax(520px, 1fr);
+    grid-template-rows: 340px auto;
   }
 
   .metric-strip {
@@ -742,6 +743,12 @@ button:focus-visible,
 
   .table-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .table-shell {
+    height: 620px;
+    max-height: 78vh;
+    min-height: 520px;
   }
 
   .map-tools {
