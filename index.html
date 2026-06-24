@@ -160,8 +160,30 @@
                 <input id="scoreThresholdInput" type="number" value="85" min="0" max="100" step="1" />
               </div>
             </div>
+            <div class="table-tabs" role="tablist" aria-label="Tablo görünümü">
+              <button
+                id="summaryTab"
+                class="table-tab active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-table-tab="summary"
+              >
+                Geocode Özeti
+              </button>
+              <button
+                id="fullTableTab"
+                class="table-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-table-tab="full"
+              >
+                Tüm Veri
+              </button>
+            </div>
             <div class="tables-area">
-              <section class="table-block table-block--summary" aria-label="Geocode özet tablosu">
+              <section class="table-block table-block--summary active" data-table-panel="summary" aria-label="Geocode özet tablosu">
                 <div class="table-title">Geocode Özeti</div>
                 <div class="table-scroll">
                   <table id="summaryTable">
@@ -180,7 +202,7 @@
                 </div>
               </section>
 
-              <section class="table-block table-block--full" aria-label="Tüm attribute tablosu">
+              <section class="table-block table-block--full" data-table-panel="full" aria-label="Tüm attribute tablosu" hidden>
                 <div class="table-title">Tüm Veri</div>
                 <div class="table-scroll">
                   <table id="resultsTable">

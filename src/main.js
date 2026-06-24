@@ -65,6 +65,8 @@ const elements = {
   tableCols: document.querySelector("#tableCols"),
   tableHead: document.querySelector("#tableHead"),
   tableBody: document.querySelector("#tableBody"),
+  tableTabs: Array.from(document.querySelectorAll("[data-table-tab]")),
+  tablePanels: Array.from(document.querySelectorAll("[data-table-panel]")),
   exportCsvButton: document.querySelector("#exportCsvButton"),
   exportKmlButton: document.querySelector("#exportKmlButton"),
   exportShpButton: document.querySelector("#exportShpButton")
@@ -79,6 +81,7 @@ let spatialFilterRowIds = null;
 let isBoxSelectMode = false;
 let boxSelectStart = null;
 let isGeocoding = false;
+let activeTableView = "summary";
 
 const graphicsLayer = new GraphicsLayer({ title: "Geocode Sonuçları" });
 const map = new ArcGISMap({
@@ -136,6 +139,9 @@ elements.scoreThresholdInput.addEventListener("input", () => {
 elements.exportCsvButton.addEventListener("click", exportCsv);
 elements.exportKmlButton.addEventListener("click", exportKml);
 elements.exportShpButton.addEventListener("click", exportShp);
+elements.tableTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setActiveTableView(tab.dataset.tableTab));
+});
 
 view.on("click", async (event) => {
   const hit = await view.hitTest(event);
@@ -804,6 +810,26 @@ function renderTables() {
   renderTable();
 }
 
+function setActiveTableView(viewName) {
+  if (!viewName) {
+    return;
+  }
+
+  activeTableView = viewName;
+
+  elements.tableTabs.forEach((tab) => {
+    const isActive = tab.dataset.tableTab === activeTableView;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+
+  elements.tablePanels.forEach((panel) => {
+    const isActive = panel.dataset.tablePanel === activeTableView;
+    panel.classList.toggle("active", isActive);
+    panel.hidden = !isActive;
+  });
+}
+
 function renderSummaryTable() {
   const rows = getFilteredRows();
   const columnWidths = [170, 240, 260, 280, 90, 120, 120, 130];
@@ -1229,3 +1255,4 @@ renderStats();
 renderTables();
 updateActionStates();
 updateSelectionStatus();
+setActiveTableView(activeTableView);
