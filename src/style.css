@@ -393,6 +393,8 @@ button:focus-visible,
   display: grid;
   grid-template-rows: minmax(300px, 38vh) minmax(0, 1fr);
   gap: 16px;
+  height: 100%;
+  max-height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -488,6 +490,8 @@ button:focus-visible,
 .table-shell {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -538,7 +542,9 @@ button:focus-visible,
 }
 
 .tables-area {
-  display: block;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
   padding: 10px;
@@ -548,6 +554,7 @@ button:focus-visible,
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -592,8 +599,11 @@ button:focus-visible,
 }
 
 .table-scroll {
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
 
